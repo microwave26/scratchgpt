@@ -1,8 +1,9 @@
 
+// Replace this with your deployed Render URL.
+// Example: https://your-scratchgpt.onrender.com
+const SERVER_URL = "https://scratchgpt-sjou.onrender.com";
+
 class ScratchAI {
-  // Replace this with your deployed Render URL.
-  // Example: https://your-scratchgpt.onrender.com
-  SERVER_URL = "https://YOUR-SERVICE.onrender.com";
 
   getInfo() {
     return {
@@ -38,7 +39,7 @@ class ScratchAI {
 
   async post(path, body) {
     const response = await fetch(
-      `${this.SERVER_URL}${path}`,
+      `${SERVER_URL}${path}`,
       {
         method: "POST",
         headers: {
