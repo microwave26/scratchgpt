@@ -1,10 +1,7 @@
 
-// Replace this with your deployed Render URL.
-// Example: https://your-scratchgpt.onrender.com
 const SERVER_URL = "https://scratchgpt-sjou.onrender.com";
 
 class ScratchAI {
-
   getInfo() {
     return {
       id: "microwave26ai",
@@ -15,39 +12,60 @@ class ScratchAI {
         {
           opcode: "askAI",
           blockType: Scratch.BlockType.REPORTER,
-          text: "ask AI [QUESTION]",
+          text: "ask AI [QUESTION] as user [USERNAME]",
           arguments: {
             QUESTION: {
               type: Scratch.ArgumentType.STRING,
               defaultValue: "Hello!"
+            },
+            USERNAME: {
+              type: Scratch.ArgumentType.STRING,
+              defaultValue: "player"
             }
           }
         },
         {
           opcode: "getHistory",
           blockType: Scratch.BlockType.REPORTER,
-          text: "AI chat history"
+          text: "AI chat history for user [USERNAME]",
+          arguments: {
+            USERNAME: {
+              type: Scratch.ArgumentType.STRING,
+              defaultValue: "player"
+            }
+          }
         },
         {
           opcode: "resetAI",
           blockType: Scratch.BlockType.REPORTER,
-          text: "reset AI memory and wait"
+          text: "reset AI memory for user [USERNAME]",
+          arguments: {
+            USERNAME: {
+              type: Scratch.ArgumentType.STRING,
+              defaultValue: "player"
+            }
+          }
         }
       ]
     };
   }
 
+  getSessionId(username) {
+    const name = String(username || "guest")
+      .trim()
+      .slice(0, 80);
+
+    return "scratchgpt:" + (name || "guest");
+  }
+
   async post(path, body) {
-    const response = await fetch(
-      `${SERVER_URL}${path}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(body)
-      }
-    );
+    const response = await fetch(`${SERVER_URL}${path}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body)
+    });
 
     const data = await response.json();
 
@@ -62,20 +80,20 @@ class ScratchAI {
     try {
       const data = await this.post("/chat", {
         question: args.QUESTION,
-        sessionId: "microwave26-scratch"
+        sessionId: this.getSessionId(args.USERNAME)
       });
 
       return data.answer || "The AI returned an empty answer.";
     } catch (error) {
       console.error("ScratchGPT:", error);
-      return "Could not contact ScratchGPT. Check the server URL and deployment.";
+      return error.message || "Could not contact ScratchGPT.";
     }
   }
 
-  async getHistory() {
+  async getHistory(args) {
     try {
       const data = await this.post("/history", {
-        sessionId: "microwave26-scratch"
+        sessionId: this.getSessionId(args.USERNAME)
       });
 
       if (!data.history || data.history.length === 0) {
@@ -92,10 +110,10 @@ class ScratchAI {
     }
   }
 
-  async resetAI() {
+  async resetAI(args) {
     try {
       const data = await this.post("/reset", {
-        sessionId: "microwave26-scratch"
+        sessionId: this.getSessionId(args.USERNAME)
       });
 
       return data.message || "Memory cleared!";
