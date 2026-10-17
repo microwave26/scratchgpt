@@ -8,14 +8,19 @@ const MAX_HISTORY_MESSAGES = 20;
 
 const app = express();
 
-const apiKey = process.env.OPENAI_API_KEY;
+const apiKey = process.env.GROQ_API_KEY;
 
 if (!apiKey) {
-  console.error("Missing OPENAI_API_KEY environment variable.");
+  console.error("Missing GROQ_API_KEY environment variable.");
   process.exit(1);
 }
 
-const client = new OpenAI({ apiKey });
+const client = new OpenAI({
+  apiKey,
+  baseURL: "https://api.groq.com/openai/v1"
+});
+
+const MODEL = "openai/gpt-oss-20b";
 
 app.use(cors({ origin: "*" }));
 app.use(express.json({ limit: "20kb" }));
@@ -30,8 +35,16 @@ const INSTRUCTIONS =
   "Answer clearly and keep answers fairly short. " +
   "Your name is ScratchGPT.";
 
+function validSessionId(sessionId) {
+  return (
+    typeof sessionId === "string" &&
+    sessionId.length >= 1 &&
+    sessionId.length <= 100
+  );
+}
+
 app.get("/", (_req, res) => {
-  res.send("ScratchAI server is running!");
+  res.send("ScratchGPT server is running with Groq!");
 });
 
 app.post("/chat", async (req, res) => {
@@ -43,11 +56,7 @@ app.post("/chat", async (req, res) => {
     });
   }
 
-  if (
-    typeof sessionId !== "string" ||
-    sessionId.length < 1 ||
-    sessionId.length > 100
-  ) {
+  if (!validSessionId(sessionId)) {
     return res.status(400).json({
       error: "Invalid session."
     });
@@ -58,59 +67,76 @@ app.post("/chat", async (req, res) => {
   }
 
   const history = conversations.get(sessionId);
-  const userMessageCount = userMessageCounts.get(sessionId) || 0;
+  const count = userMessageCounts.get(sessionId) || 0;
 
-  // Enforce the limit before making an API request.
-  if (userMessageCount >= MAX_USER_MESSAGES) {
+  if (count >= MAX_USER_MESSAGES) {
     return res.status(429).json({
       error: "You've reached the 25-message limit for this conversation!"
     });
   }
 
-  // Count this request so simultaneous requests cannot easily
-  // slip past the limit in this single server process.
-  userMessageCounts.set(sessionId, userMessageCount + 1);
+  userMessageCounts.set(sessionId, count + 1);
 
-  history.push({
+  const userMessage = {
     role: "user",
     content: question.trim()
-  });
+  };
+
+  history.push(userMessage);
 
   try {
     const response = await client.responses.create({
-      model: "gpt-6-luna",
+      model: MODEL,
       instructions: INSTRUCTIONS,
       input: history
     });
 
-    const answer = response.output_text || "ScratchGPT couldn't generate a reply.";
+    const answer =
+      response.output_text ||
+      "ScratchGPT couldn't generate a reply.";
 
     history.push({
       role: "assistant",
       content: answer
     });
 
-    // Keep the most recent 20 messages for conversation context.
     if (history.length > MAX_HISTORY_MESSAGES) {
       history.splice(0, history.length - MAX_HISTORY_MESSAGES);
     }
 
     return res.json({ answer });
   } catch (error) {
-    // Remove the unanswered question and restore the counter
-    // if the AI request fails.
-    history.pop();
+    // Remove this unanswered question from the history.
+    const index = history.indexOf(userMessage);
+    if (index !== -1) {
+      history.splice(index, 1);
+    }
 
-    const currentCount = userMessageCounts.get(sessionId) || 0;
     userMessageCounts.set(
       sessionId,
-      Math.max(0, currentCount - 1)
+      Math.max(0, (userMessageCounts.get(sessionId) || 1) - 1)
     );
 
-    console.error("AI request failed:", error.message);
+    console.error(
+      "Groq API request failed:",
+      error.status || "",
+      error.message
+    );
+
+    if (error.status === 429) {
+      return res.status(429).json({
+        error: "Groq's rate limit was reached. Please try again later."
+      });
+    }
+
+    if (error.status === 401) {
+      return res.status(500).json({
+        error: "Groq rejected the API key. Check GROQ_API_KEY in Render."
+      });
+    }
 
     return res.status(500).json({
-      error: "AI request failed. Check the server logs."
+      error: "ScratchGPT couldn't reach Groq. Check the server logs."
     });
   }
 });
@@ -118,11 +144,7 @@ app.post("/chat", async (req, res) => {
 app.post("/history", (req, res) => {
   const { sessionId = "scratch-default" } = req.body;
 
-  if (
-    typeof sessionId !== "string" ||
-    sessionId.length < 1 ||
-    sessionId.length > 100
-  ) {
+  if (!validSessionId(sessionId)) {
     return res.status(400).json({
       error: "Invalid session."
     });
@@ -141,11 +163,7 @@ app.post("/history", (req, res) => {
 app.post("/reset", (req, res) => {
   const { sessionId = "scratch-default" } = req.body;
 
-  if (
-    typeof sessionId !== "string" ||
-    sessionId.length < 1 ||
-    sessionId.length > 100
-  ) {
+  if (!validSessionId(sessionId)) {
     return res.status(400).json({
       error: "Invalid session."
     });
@@ -162,5 +180,6 @@ app.post("/reset", (req, res) => {
 const port = Number(process.env.PORT) || 3000;
 
 app.listen(port, "0.0.0.0", () => {
-  console.log(`ScratchAI server listening on port ${port}`);
+  console.log(`ScratchGPT server listening on port ${port}`);
+  console.log(`AI provider: Groq | Model: ${MODEL}`);
 });
