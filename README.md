@@ -1,6 +1,6 @@
 # ScratchGPT
 
-\# ScratchGPT Changelog
+# ScratchGPT Changelog
 
 
 
@@ -8,47 +8,47 @@ All notable changes to ScratchGPT will be documented here.
 
 
 
-\## \[1.0-beta.1] - 2026-10-17
+## \[1.0-beta.1] - 2026-10-17
 
 
 
-\### Added
+### Added
 
-\- Groq API integration for AI responses.
+- Groq API integration for AI responses.
 
-\- Separate conversations using usernames.
+- Separate conversations using usernames.
 
-\- Conversation history retrieval.
+- Conversation history retrieval.
 
-\- Memory reset functionality.
+- Memory reset functionality.
 
-\- A 25-message limit per conversation.
+- A 25-message limit per conversation.
 
-\- Error handling for failed AI requests.
-
-
-
-\### Changed
-
-\- Switched the AI backend from OpenAI to Groq.
-
-\- Updated the custom TurboWarp extension to support individual chat sessions.
+- Error handling for failed AI requests.
 
 
 
-\### Fixed
+### Changed
 
-\- Fixed the missing `OPENAI\_API\_KEY` deployment issue by switching to `GROQ\_API\_KEY`.
+- Switched the AI backend from OpenAI to Groq.
 
-\- Improved API error messages.
+- Updated the custom TurboWarp extension to support individual chat sessions.
 
 
 
-\### Notes
+### Fixed
 
-\- This is a beta release; bugs and unexpected behavior may still occur.
+- Fixed the missing `OPENAI\_API\_KEY` deployment issue by switching to `GROQ\_API\_KEY`.
 
-\- Conversation memory is currently stored in server memory and may be lost when the server restarts.
+- Improved API error messages.
+
+
+
+### Notes
+
+- This is a beta release; bugs and unexpected behavior may still occur.
+
+- Conversation memory is currently stored in server memory and may be lost when the server restarts.
 
 
 
