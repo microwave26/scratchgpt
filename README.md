@@ -5,5 +5,5 @@
 
 ## Welcome to ScratchGPT!
 
-Download the project file from the repository here,
+Download the project file from the repository [here](https://github.com/microwave26/scratchgpt/releases/latest/download/ScratchGPT.sb3),
 then run it with [Turbowarp](https://turbowarp.org)!
