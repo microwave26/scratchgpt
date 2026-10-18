@@ -1,6 +1,9 @@
 # ScratchGPT
+<img src="https://file.garden/apqDeECh-on09AfX/ScratchGPT.png" width="350" alt="Description">
 
-Welcome to ScratchGPT! This GitHub repository handles the extensions and the server, so no need to bother peeking here.
+![Version](https://img.shields.io/badge/version-1.0-blue)
 
-## [1.0.0]
--Initial release!
+## Welcome to ScratchGPT!
+
+Download the project file from the repository here,
+then run it with [Turbowarp](https://turbowarp.org)!
